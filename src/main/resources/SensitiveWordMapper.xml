@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.SensitiveWordMapper">
+    
+    <!-- 查询所有敏感词 -->
+    <select id="getAllSensitiveWords" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        order by keyword_type asc, id asc
+    </select>
+    
+    <!-- 根据关键词类型查询敏感词 -->
+    <select id="getSensitiveWordsByType" parameterType="int" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        where keyword_type = #{keywordType}
+        order by id asc
+    </select>
+    
+    <!-- 添加敏感词 -->
+    <insert id="addSensitiveWord" parameterType="com.myk.emotionalHole.entity.SensitiveWord">
+        insert into sensitive_word (word, keyword_type, create_time)
+        values (#{word}, #{keywordType}, #{createTime})
+    </insert>
+    
+    <!-- 更新敏感词 -->
+    <update id="updateSensitiveWord" parameterType="com.myk.emotionalHole.entity.SensitiveWord">
+        update sensitive_word
+        set word = #{word}, keyword_type = #{keywordType}
+        where id = #{id}
+    </update>
+    
+    <!-- 删除敏感词 -->
+    <delete id="deleteSensitiveWord" parameterType="java.lang.Long">
+        delete from sensitive_word
+        where id = #{id}
+    </delete>
+    
+    <!-- 根据ID查询敏感词 -->
+    <select id="getSensitiveWordById" parameterType="java.lang.Long" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        where id = #{id}
+    </select>
+    
+    <!-- 根据敏感词内容和类型查询 -->
+    <select id="getSensitiveWordByWordAndType" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        where word = #{word} and keyword_type = #{keywordType}
+    </select>
+    
+    <!-- 批量插入敏感词 -->
+    <insert id="batchInsertSensitiveWords" parameterType="java.util.List">
+        insert into sensitive_word (word, keyword_type, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.word}, #{item.keywordType}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <!-- 分页获取敏感词 -->
+    <select id="getSensitiveWordsByPage" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        order by id desc
+        limit #{param1}, #{param2}
+    </select>
+
+    <!-- 根据类型分页获取敏感词 -->
+    <select id="getSensitiveWordsByTypeAndPage" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        <where>
+            <if test="keywordType != null">
+                and keyword_type = #{keywordType}
+            </if>
+        </where>
+        order by id desc
+        limit #{offset}, #{limit}
+    </select>
+
+    <!-- 获取敏感词总数 -->
+    <select id="getSensitiveWordCount" resultType="int">
+        select count(*) from sensitive_word
+    </select>
+
+    <!-- 根据类型获取敏感词总数 -->
+    <select id="getSensitiveWordCountByType" resultType="int">
+        select count(*) from sensitive_word
+        <where>
+            <if test="keywordType != null">
+                and keyword_type = #{keywordType}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据关键词搜索敏感词（分页） -->
+    <select id="searchSensitiveWordsByKeyword" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        where word like concat('%', #{keyword}, '%')
+        order by id desc
+        limit #{offset}, #{limit}
+    </select>
+
+    <!-- 根据关键词统计敏感词数量 -->
+    <select id="countSensitiveWordsByKeyword" resultType="int">
+        select count(*) from sensitive_word
+        where word like concat('%', #{keyword}, '%')
+    </select>
+    
+    <!-- 根据关键词和类型搜索敏感词（分页） -->
+    <select id="searchSensitiveWordsByKeywordAndType" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        where word like concat('%', #{keyword}, '%')
+          and keyword_type = #{keywordType}
+        order by id desc
+        limit #{start}, #{pageSize}
+    </select>
+    
+    <!-- 根据关键词和类型统计敏感词数量 -->
+    <select id="countSensitiveWordsByKeywordAndType" resultType="int">
+        select count(*) from sensitive_word
+        where word like concat('%', #{keyword}, '%')
+          and keyword_type = #{keywordType}
+    </select>
+    
+    <!-- 获取心理危机词（类型2和类型3）分页列表 -->
+    <select id="getCrisisWordsByPage" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        where keyword_type in (2, 3)
+        order by id desc
+        limit #{start}, #{pageSize}
+    </select>
+    
+    <!-- 统计心理危机词数量 -->
+    <select id="countCrisisWords" resultType="int">
+        select count(*) from sensitive_word
+        where keyword_type in (2, 3)
+    </select>
+    
+    <!-- 搜索心理危机词（类型2和类型3）分页列表 -->
+    <select id="searchCrisisWordsByKeyword" resultType="com.myk.emotionalHole.entity.SensitiveWord">
+        select id, word, keyword_type as keywordType, create_time as createTime
+        from sensitive_word
+        where keyword_type in (2, 3)
+          and word like concat('%', #{keyword}, '%')
+        order by id desc
+        limit #{start}, #{pageSize}
+    </select>
+    
+    <!-- 统计搜索心理危机词数量 -->
+    <select id="countCrisisWordsByKeyword" resultType="int">
+        select count(*) from sensitive_word
+        where keyword_type in (2, 3)
+          and word like concat('%', #{keyword}, '%')
+    </select>
+    
+</mapper>

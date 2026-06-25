@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.UserProfileMapper">
+
+    <resultMap id="UserProfileResultMap" type="com.myk.emotionalHole.entity.UserProfile">
+        <id property="id" column="id"/>
+        <result property="anonymousId" column="anonymous_id"/>
+        <result property="interestTags" column="interest_tags"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <select id="selectByAnonymousId" parameterType="java.lang.String" resultMap="UserProfileResultMap">
+        select id, anonymous_id, interest_tags, create_time, update_time 
+        from user_profile 
+        where anonymous_id = #{anonymousId}
+    </select>
+    
+    <insert id="insert" parameterType="com.myk.emotionalHole.entity.UserProfile" useGeneratedKeys="true" keyProperty="id">
+        insert into user_profile (anonymous_id, interest_tags, create_time, update_time)
+        values (#{anonymousId}, #{interestTags}, #{createTime}, #{updateTime})
+    </insert>
+    
+    <update id="update" parameterType="com.myk.emotionalHole.entity.UserProfile">
+        update user_profile 
+        set interest_tags = #{interestTags}, 
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+
+</mapper>

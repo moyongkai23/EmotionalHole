@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.ContentMapper">
+
+    <sql id="BaseContentSelect">
+        select c.*, cat.topic_name, u.avatar
+    </sql>
+
+    <sql id="BaseContentJoins">
+        from content c
+        left join topic cat on c.topic_id = cat.id
+        left join user u on c.anonymous_id = u.anonymous_id
+    </sql>
+    
+    <resultMap id="ContentSafetyResultMap" type="com.myk.emotionalHole.entity.ContentSafety">
+        <result column="risk_level" property="riskLevel" />
+        <result column="risk_score" property="riskScore" />
+        <result column="detected_keywords" property="detectedKeywords" />
+        <result column="warning_status" property="warningStatus" />
+        <result column="emotion_type" property="emotionType" />
+        <result column="emotion_score" property="emotionScore" />
+    </resultMap>
+
+    <resultMap id="ContentResultMap" type="com.myk.emotionalHole.entity.Content">
+        <result column="id" property="id" />
+        <result column="content_text" property="contentText" />
+        <result column="image_urls" property="imageUrls" />
+        <result column="anonymous_id" property="anonymousId" />
+        <result column="avatar" property="avatar" />
+        <result column="topic_id" property="topicId" />
+        <result column="topic_name" property="topicName" />
+        <result column="like_count" property="likeCount" />
+        <result column="comment_count" property="commentCount" />
+        <result column="hug_count" property="hugCount" />
+        <result column="content_status" property="contentStatus" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <association property="safety" resultMap="ContentSafetyResultMap" />
+    </resultMap>
+    
+    <insert id="insertContent" parameterType="com.myk.emotionalHole.entity.Content">
+        insert into content (content_text, image_urls, anonymous_id, topic_id, like_count, comment_count, hug_count, content_status, risk_level, risk_score, detected_keywords, warning_status, emotion_type, emotion_score, create_time, update_time)
+        values (#{contentText}, #{imageUrls}, #{anonymousId}, #{topicId}, #{likeCount}, #{commentCount}, #{hugCount}, #{contentStatus}, #{safety.riskLevel}, #{safety.riskScore}, #{safety.detectedKeywords}, #{safety.warningStatus}, #{safety.emotionType}, #{safety.emotionScore}, #{createTime}, #{updateTime})
+    </insert>
+    
+    <select id="getContentList" parameterType="java.util.Map" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where c.content_status = 1 order by c.create_time desc limit #{offset}, #{pageSize}
+    </select>
+    
+    <select id="getContentById" parameterType="java.lang.Long" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where c.id = #{id}
+    </select>
+    
+    <select id="getContentByAnonymousId" parameterType="java.lang.String" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where c.anonymous_id = #{anonymousId} order by c.create_time desc
+    </select>
+    
+    <select id="getContentByAnonymousIdWithPage" parameterType="java.util.Map" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where c.anonymous_id = #{anonymousId} order by c.create_time desc limit #{offset}, #{pageSize}
+    </select>
+    
+    <update id="updateContent" parameterType="com.myk.emotionalHole.entity.Content">
+        update content 
+        set content_text = #{contentText}, 
+            image_urls = #{imageUrls},
+            update_time = #{updateTime}
+        where id = #{id} and anonymous_id = #{anonymousId}
+    </update>
+    
+    <delete id="deleteContent" parameterType="java.lang.Long">
+        delete from content where id = #{id}
+    </delete>
+    
+    <update id="updateContentStatus" parameterType="java.util.Map">
+        update content set content_status = #{status} where id = #{id}
+    </update>
+    
+    <select id="getContentListByStatus" parameterType="java.util.Map" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where c.content_status = #{status} 
+        order by c.create_time desc 
+        limit #{offset}, #{pageSize}
+    </select>
+    
+    <update id="incrementLikeCount">
+        update content set like_count = like_count + #{delta} where id = #{id} and like_count + #{delta} >= 0
+    </update>
+
+    <update id="incrementCommentCount">
+        update content set comment_count = comment_count + #{delta} where id = #{id} and comment_count + #{delta} >= 0
+    </update>
+
+    <update id="incrementHugCount">
+        update content set hug_count = hug_count + #{delta} where id = #{id} and hug_count + #{delta} >= 0
+    </update>
+
+    <select id="searchContent" parameterType="java.util.Map" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where content_status = 1 
+        and content_text like concat('%', #{keyword}, '%')
+        order by create_time desc 
+        limit #{offset}, #{pageSize}
+    </select>
+    
+    <select id="adminGetContentList" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        <where>
+            <if test="status != null">
+                and content_status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                and content_text like concat('%', #{keyword}, '%')
+            </if>
+            <if test="startTime != null">
+                and create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and create_time &lt;= #{endTime}
+            </if>
+        </where>
+        order by create_time desc 
+        limit #{offset}, #{pageSize}
+    </select>
+    
+    <select id="adminCountContent" resultType="java.lang.Integer">
+        select count(*) from content c 
+        <where>
+            <if test="status != null">
+                and c.content_status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                and c.content_text like concat('%', #{keyword}, '%')
+            </if>
+            <if test="startTime != null">
+                and c.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and c.create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+    
+    <select id="getContentStatistics" resultType="java.util.Map">
+        select 
+            content_status, 
+            count(*) as count 
+        from content 
+        <where>
+            <if test="startTime != null">
+                and create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and create_time &lt;= #{endTime}
+            </if>
+        </where>
+        group by content_status
+    </select>
+    
+    <select id="getContentStatisticsByDate" resultType="java.util.Map">
+        select 
+            date(create_time) as date, 
+            count(*) as count 
+        from content 
+        <where>
+            <if test="startTime != null">
+                and create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and create_time &lt;= #{endTime}
+            </if>
+        </where>
+        group by date(create_time) 
+        order by date(create_time)
+    </select>
+    
+    <select id="countAll" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM content WHERE content_status = 1
+    </select>
+    
+    <select id="getContentListByCategory" parameterType="java.util.Map" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where c.content_status = 1 and c.topic_id = #{topicId} 
+        order by c.create_time desc 
+        limit #{offset}, #{pageSize}
+    </select>
+    
+    <select id="getWarningList" parameterType="java.util.Map" resultMap="ContentResultMap">
+        <include refid="BaseContentSelect"/>
+        <include refid="BaseContentJoins"/>
+        where c.risk_level &gt; 0 
+        <if test="warningStatus != null">
+            and c.warning_status = #{warningStatus}
+        </if>
+        <if test="riskLevel != null">
+            and c.risk_level = #{riskLevel}
+        </if>
+        order by c.risk_level desc, c.create_time desc
+        limit #{offset}, #{pageSize}
+    </select>
+    
+    <select id="countWarnings" parameterType="java.util.Map" resultType="java.lang.Integer">
+        select count(*) from content 
+        where risk_level &gt; 0 
+        <if test="warningStatus != null">
+            and warning_status = #{warningStatus}
+        </if>
+        <if test="riskLevel != null">
+            and risk_level = #{riskLevel}
+        </if>
+    </select>
+    
+    <update id="updateWarningStatus" parameterType="java.util.Map">
+        update content 
+        set warning_status = #{warningStatus},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+    
+    <update id="updateRiskInfo" parameterType="java.util.Map">
+        update content 
+        set risk_level = #{riskLevel},
+            risk_score = #{riskScore},
+            detected_keywords = #{detectedKeywords},
+            warning_status = #{warningStatus},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+    
+    <select id="getWarningStatistics" resultType="java.util.Map">
+        select 
+            risk_level,
+            warning_status,
+            count(*) as count
+        from content
+        where risk_level &gt; 0
+        group by risk_level, warning_status
+    </select>
+    
+    <select id="getWarningStatisticsByDate" resultType="java.util.Map">
+        select 
+            date(create_time) as date,
+            risk_level,
+            count(*) as count
+        from content
+        where risk_level &gt; 0
+        <if test="startTime != null">
+            and create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            and create_time &lt;= #{endTime}
+        </if>
+        group by date(create_time), risk_level
+        order by date(create_time), risk_level
+    </select>
+    
+    <select id="getTopRiskContents" parameterType="java.util.Map" resultMap="ContentResultMap">
+        select c.*, cat.topic_name from content c left join topic cat on c.topic_id = cat.id 
+        where c.risk_level >= #{minRiskLevel}
+        order by c.risk_score desc, c.create_time desc
+        limit #{limit}
+    </select>
+
+    <!-- 统计高亮预警数（高风险且未处理） -->
+    <select id="countHighRiskWarnings" resultType="java.lang.Integer">
+        select count(*) from content where risk_level = 3 and warning_status = 0
+    </select>
+
+    <!-- 统计帖子总数 -->
+    <select id="countPosts" resultType="java.lang.Integer">
+        select count(*) from content
+    </select>
+    
+    <!-- 获取发帖量趋势 -->
+    <select id="getPostTrend" resultType="java.util.Map">
+        select date(create_time) as date, count(*) as count
+        from content
+        where create_time >= date_sub(curdate(), interval 7 day)
+        group by date(create_time)
+        order by date(create_time) desc
+    </select>
+    
+    <!-- 获取高频话题趋势 -->
+    <select id="getTopicTrend" resultType="java.util.Map">
+        select t.topic_name as tag, count(c.id) as count
+        from content c
+        inner join topic t on c.topic_id = t.id
+        where c.content_status = 1
+          and t.topic_name is not null
+          and t.topic_name != ''
+        group by t.topic_name
+        having count(c.id) > 0
+        order by count desc
+        limit 10
+    </select>
+    
+    <!-- 获取情绪标签分布 -->
+    <select id="getEmotionDistribution" resultType="java.util.Map">
+        select 
+            sum(case when emotion_type = 1 then 1 else 0 end) * 100.0 / count(*) as positive,
+            sum(case when emotion_type = 2 then 1 else 0 end) * 100.0 / count(*) as neutral,
+            sum(case when emotion_type = 3 then 1 else 0 end) * 100.0 / count(*) as negative
+        from content
+        where content_status = 1
+    </select>
+    
+    <select id="getActivityTrend" resultType="java.util.Map">
+        <![CDATA[
+        select t.date, count(distinct t.anonymous_id) as activeUsers,
+               sum(case when t.behavior_type = 0 then 1 else 0 end) as posts
+        from (
+            select date(create_time) as date, anonymous_id, 0 as behavior_type from content 
+            where 1=1
+        ]]>
+            <if test="startDate != null and startDate != ''">
+                <![CDATA[ and date(create_time) >= #{startDate} ]]>
+            </if>
+            <if test="endDate != null and endDate != ''">
+                <![CDATA[ and date(create_time) <= #{endDate} ]]>
+            </if>
+            <if test="startDate == null or startDate == ''">
+                <![CDATA[ and create_time >= date_sub(curdate(), interval 30 day) ]]>
+            </if>
+        <![CDATA[
+            union all
+            select date(create_time) as date, anonymous_id, behavior_type as behavior_type from user_behavior
+            where 1=1
+        ]]>
+            <if test="startDate != null and startDate != ''">
+                <![CDATA[ and date(create_time) >= #{startDate} ]]>
+            </if>
+            <if test="endDate != null and endDate != ''">
+                <![CDATA[ and date(create_time) <= #{endDate} ]]>
+            </if>
+            <if test="startDate == null or startDate == ''">
+                <![CDATA[ and create_time >= date_sub(curdate(), interval 30 day) ]]>
+            </if>
+        <![CDATA[
+        ) t
+        group by t.date order by t.date desc
+        ]]>
+    </select>
+    
+    <update id="updateContentStatusByAnonymousId" parameterType="java.util.Map">
+        update content 
+        set content_status = #{status},
+            update_time = #{updateTime}
+        where anonymous_id = #{anonymousId}
+    </update>
+    
+</mapper>

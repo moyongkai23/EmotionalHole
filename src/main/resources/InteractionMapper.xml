@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.InteractionMapper">
+    
+    <!-- 统计总互动数 -->
+    <select id="countTotalInteractions" resultType="java.lang.Integer">
+        select (select count(*) from `like`) + (select count(*) from hug) as total
+    </select>
+    
+    <!-- 获取互动方式统计 -->
+    <select id="getInteractionStats" resultType="java.util.Map">
+        select '暖心' as type, count(*) as count from `like`
+        union all
+        select '抱抱' as type, count(*) as count from hug
+    </select>
+    
+</mapper>

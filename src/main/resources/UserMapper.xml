@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.UserMapper">
+    
+    <!-- 根据anonymousId查询用户 -->
+    <select id="getUserByAnonymousId" parameterType="java.lang.String" resultType="com.myk.emotionalHole.entity.User">
+        select * from user where anonymous_id = #{anonymousId}
+    </select>
+    
+    <!-- 插入新用户 -->
+    <insert id="insertUser" parameterType="com.myk.emotionalHole.entity.User">
+        insert into user (anonymous_id, openid, avatar, user_status, create_time, update_time)
+        values (#{anonymousId}, #{openid}, #{avatar}, #{userStatus}, #{createTime}, #{updateTime})
+    </insert>
+    
+    <!-- 根据openid查询用户 -->
+    <select id="getUserByOpenid" parameterType="java.lang.String" resultType="com.myk.emotionalHole.entity.User">
+        select * from user where openid = #{openid}
+    </select>
+    
+    <!-- 分页查询用户列表 -->
+    <select id="getUserList" parameterType="java.util.Map" resultType="com.myk.emotionalHole.entity.User">
+        select * from user
+        <where>
+            <if test="search != null and search != ''">
+                and anonymous_id like concat('%', #{search}, '%')
+            </if>
+            <if test="userStatus != null">
+                and user_status = #{userStatus}
+            </if>
+        </where>
+        order by create_time desc
+        limit #{offset}, #{limit}
+    </select>
+    
+    <!-- 查询用户总数 -->
+    <select id="getUserCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+        select count(*) from user
+        <where>
+            <if test="search != null and search != ''">
+                and anonymous_id like concat('%', #{search}, '%')
+            </if>
+            <if test="userStatus != null">
+                and user_status = #{userStatus}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 根据ID查询用户详情 -->
+    <select id="getUserById" parameterType="java.lang.Long" resultType="com.myk.emotionalHole.entity.User">
+        select * from user where id = #{id}
+    </select>
+    
+    <!-- 更新用户状态 -->
+    <update id="updateUserStatus" parameterType="java.util.Map">
+        update user
+        set user_status = #{userStatus},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+    
+    <!-- 获取用户行为统计信息（发布数、收到的点赞数、收到的评论数） -->
+    <select id="getUserBehaviorStats" parameterType="java.lang.String" resultType="java.util.Map">
+        select
+            (select count(*) from content where anonymous_id = #{anonymousId}) as publishCount,
+            (select count(*) from `like` where target_type = 1 and target_id in (select id from content where anonymous_id = #{anonymousId})) as likeCount,
+            (select count(*) from comment where content_id in (select id from content where anonymous_id = #{anonymousId})) as commentCount
+    </select>
+    
+    <!-- 获取用户发布内容数 -->
+    <select id="getUserContentCount" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(*) from content where anonymous_id = #{anonymousId}
+    </select>
+    
+    <!-- 获取用户收到的点赞数（统计该用户内容收到的点赞） -->
+    <select id="getUserReceivedLikeCount" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(*) from `like` 
+        where target_type = 1 
+        and target_id in (select id from content where anonymous_id = #{anonymousId})
+    </select>
+    
+    <!-- 根据匿名ID查询用户 -->
+    <select id="findByAnonymousId" parameterType="java.lang.String" resultType="com.myk.emotionalHole.entity.User">
+        select * from user where anonymous_id = #{param1}
+    </select>
+    
+    <!-- 更新用户表中的匿名ID -->
+    <update id="updateAnonymousId" parameterType="java.lang.String">
+        update user set anonymous_id = #{param2} where anonymous_id = #{param1}
+    </update>
+    
+    <!-- 更新content表中的匿名ID -->
+    <update id="updateContentAnonymousId" parameterType="java.lang.String">
+        update content set anonymous_id = #{param2} where anonymous_id = #{param1}
+    </update>
+    
+    <!-- 更新comment表中的匿名ID -->
+    <update id="updateCommentAnonymousId" parameterType="java.lang.String">
+        update comment set anonymous_id = #{param2} where anonymous_id = #{param1}
+    </update>
+    
+    <!-- 更新like表中的匿名ID -->
+    <update id="updateLikeAnonymousId" parameterType="java.lang.String">
+        update `like` set anonymous_id = #{param2} where anonymous_id = #{param1}
+    </update>
+    
+    <!-- 更新hug表中的匿名ID -->
+    <update id="updateHugAnonymousId" parameterType="java.lang.String">
+        update hug set anonymous_id = #{param2} where anonymous_id = #{param1}
+    </update>
+    
+    <!-- 更新message表中的发送者匿名ID -->
+    <update id="updateMessageSenderAnonymousId" parameterType="java.lang.String">
+        update message set sender_anonymous_id = #{param2} where sender_anonymous_id = #{param1}
+    </update>
+    
+    <!-- 更新message表中的接收者匿名ID -->
+    <update id="updateMessageReceiverAnonymousId" parameterType="java.lang.String">
+        update message set receiver_anonymous_id = #{param2} where receiver_anonymous_id = #{param1}
+    </update>
+
+    <!-- 更新report表中的匿名ID -->
+    <update id="updateReportAnonymousId" parameterType="java.lang.String">
+        update report set anonymous_id = #{param2} where anonymous_id = #{param1}
+    </update>
+
+    <!-- 更新用户头像 -->
+    <update id="updateAvatar" parameterType="java.util.Map">
+        update user
+        set avatar = #{avatar},
+            update_time = #{updateTime}
+        where anonymous_id = #{anonymousId}
+    </update>
+    
+    <!-- 统计用户总数 -->
+    <select id="countUsers" resultType="java.lang.Integer">
+        select count(*) from user
+    </select>
+    
+    <!-- 获取用户增长趋势 -->
+    <select id="getUserTrend" resultType="java.util.Map">
+        select date(create_time) as date, count(*) as count
+        from user
+        where create_time >= date_sub(curdate(), interval 7 day)
+        group by date(create_time)
+        order by date(create_time) desc
+    </select>
+    
+    <!-- 统计今日活跃用户数 -->
+    <select id="countTodayActiveUsers" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(distinct anonymous_id) as activeCount
+        from (
+            select anonymous_id from content where date(create_time) = #{today}
+            union distinct
+            select anonymous_id from comment where date(create_time) = #{today}
+            union distinct
+            select anonymous_id from `like` where date(create_time) = #{today}
+            union distinct
+            select anonymous_id from user_behavior where date(create_time) = #{today}
+        ) as active_users
+    </select>
+    
+</mapper>

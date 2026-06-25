@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.UserBehaviorMapper">
+
+    <resultMap id="UserBehaviorResultMap" type="com.myk.emotionalHole.entity.UserBehavior">
+        <id column="id" property="id" />
+        <result column="anonymous_id" property="anonymousId" />
+        <result column="content_id" property="contentId" />
+        <result column="behavior_type" property="behaviorType" />
+        <result column="behavior_weight" property="behaviorWeight" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <!-- 插入用户行为记录 -->
+    <insert id="insert" parameterType="com.myk.emotionalHole.entity.UserBehavior" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_behavior (anonymous_id, content_id, behavior_type, behavior_weight, create_time)
+        VALUES (#{anonymousId}, #{contentId}, #{behaviorType}, #{behaviorWeight}, #{createTime})
+    </insert>
+
+    <!-- 根据用户ID查询行为记录 -->
+    <select id="selectByAnonymousId" parameterType="java.lang.String" resultMap="UserBehaviorResultMap">
+        SELECT * FROM user_behavior
+        WHERE anonymous_id = #{anonymousId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据用户ID和行为类型查询 -->
+    <select id="selectByAnonymousIdAndType" resultMap="UserBehaviorResultMap">
+        SELECT * FROM user_behavior
+        WHERE anonymous_id = #{anonymousId}
+          AND behavior_type = #{behaviorType}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询用户对某内容的行为记录 -->
+    <select id="selectByUserAndContent" resultMap="UserBehaviorResultMap">
+        SELECT * FROM user_behavior
+        WHERE anonymous_id = #{anonymousId}
+          AND content_id = #{contentId}
+          AND behavior_type = #{behaviorType}
+        LIMIT 1
+    </select>
+
+    <!-- 更新行为记录 -->
+    <update id="update" parameterType="com.myk.emotionalHole.entity.UserBehavior">
+        UPDATE user_behavior
+        SET behavior_weight = #{behaviorWeight},
+            create_time = #{createTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 获取用户最近浏览的内容ID列表 -->
+    <select id="selectRecentViewedContentIds" resultType="java.lang.Long">
+        SELECT content_id
+        FROM (
+            SELECT content_id, create_time
+            FROM user_behavior
+            WHERE anonymous_id = #{anonymousId}
+              AND behavior_type = 1
+            ORDER BY create_time DESC
+        ) AS temp
+        GROUP BY content_id
+        ORDER BY MAX(create_time) DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

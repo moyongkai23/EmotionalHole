@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.AdminMapper">
+    
+    <!-- 根据管理员账号查询管理员信息 -->
+    <select id="getAdminByAccount" resultType="com.myk.emotionalHole.entity.Admin">
+        SELECT id, admin_account as adminAccount, admin_password as adminPassword, 
+               admin_avatar as adminAvatar, admin_status as adminStatus, create_time as createTime
+        FROM admin
+        WHERE admin_account = #{adminAccount}
+    </select>
+    
+    <!-- 根据管理员ID查询管理员信息 -->
+    <select id="getAdminById" resultType="com.myk.emotionalHole.entity.Admin">
+        SELECT id, admin_account as adminAccount, admin_password as adminPassword, 
+               admin_avatar as adminAvatar, admin_status as adminStatus, create_time as createTime
+        FROM admin
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 插入管理员信息 -->
+    <insert id="insertAdmin" parameterType="com.myk.emotionalHole.entity.Admin">
+        INSERT INTO admin (admin_account, admin_password, admin_avatar, admin_status, create_time)
+        VALUES (#{adminAccount}, #{adminPassword}, #{adminAvatar}, #{adminStatus}, #{createTime})
+    </insert>
+    
+    <!-- 更新管理员信息 -->
+    <update id="updateAdmin" parameterType="com.myk.emotionalHole.entity.Admin">
+        UPDATE admin
+        SET admin_password = #{adminPassword},
+            admin_avatar = #{adminAvatar},
+            admin_status = #{adminStatus}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 查询所有管理员列表 -->
+    <select id="getAllAdmins" resultType="com.myk.emotionalHole.entity.Admin">
+        SELECT id, admin_account as adminAccount, admin_password as adminPassword, 
+               admin_avatar as adminAvatar, admin_status as adminStatus, create_time as createTime
+        FROM admin
+        ORDER BY create_time DESC
+    </select>
+    
+    <!-- 删除管理员 -->
+    <delete id="deleteAdmin" parameterType="java.lang.Long">
+        DELETE FROM admin WHERE id = #{id}
+    </delete>
+</mapper>

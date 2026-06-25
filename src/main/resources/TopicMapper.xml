@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.TopicMapper">
+
+    <select id="getAllTopics" resultType="com.myk.emotionalHole.entity.Topic">
+        SELECT id, topic_name as topicName, is_active, create_time
+        FROM topic
+        WHERE is_active = 1
+        ORDER BY id ASC
+    </select>
+
+    <select id="getTopicByName" resultType="com.myk.emotionalHole.entity.Topic">
+        SELECT id, topic_name as topicName, is_active, create_time
+        FROM topic
+        WHERE topic_name = #{name}
+    </select>
+
+    <insert id="addTopic" parameterType="com.myk.emotionalHole.entity.Topic" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO topic (topic_name, is_active, create_time)
+        VALUES (#{topicName}, #{isActive}, #{createTime})
+    </insert>
+
+
+</mapper>

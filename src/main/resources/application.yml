@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/emotional_hole?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:your_password_here}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+      file-size-threshold: 2KB
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  type-aliases-package: com.myk.emotionalHole.entity
+  mapper-locations: classpath:*.xml
+
+wechat:
+  app-id: ${WECHAT_APP_ID:your_wechat_app_id}
+  app-secret: ${WECHAT_APP_SECRET:your_wechat_app_secret}
+  jscode2session-url: https://api.weixin.qq.com/sns/jscode2session
+
+ai:
+  api-key: ${AI_API_KEY:your_ai_api_key}
+  timeout: 3000
+  agent-api-url: https://qianfan.baidubce.com/v2/app/conversation/runs
+  chat-agent-id: ${AI_CHAT_AGENT_ID:your_chat_agent_id}
+  audit-agent-id: ${AI_AUDIT_AGENT_ID:your_audit_agent_id}
+
+file:
+  upload:
+    path: uploads/images
+    url-prefix: /images/
+    allowed-types: jpg,jpeg,png,gif,webp
+
+jwt:
+  secret: ${JWT_SECRET:your_jwt_secret_at_least_32_chars_long}
+  admin-secret: ${JWT_ADMIN_SECRET:your_admin_jwt_secret_at_least_32_chars}
+  access-token-expiration: 7200000
+  refresh-token-expiration: 604800000
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html

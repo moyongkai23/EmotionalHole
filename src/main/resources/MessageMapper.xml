@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.MessageMapper">
+    
+    <resultMap id="MessageResultMap" type="com.myk.emotionalHole.entity.Message">
+        <id property="id" column="id"/>
+        <result property="senderAnonymousId" column="sender_anonymous_id"/>
+        <result property="receiverAnonymousId" column="receiver_anonymous_id"/>
+        <result property="messageText" column="message_text"/>
+        <result property="messageStatus" column="message_status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="isAdmin" column="is_admin"/>
+        <result property="messageType" column="message_type"/>
+        <result property="senderAvatar" column="sender_avatar"/>
+        <result property="receiverAvatar" column="receiver_avatar"/>
+    </resultMap>
+    
+    <insert id="insert" parameterType="com.myk.emotionalHole.entity.Message" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO message (sender_anonymous_id, receiver_anonymous_id, message_text, message_status, message_type)
+        VALUES (#{senderAnonymousId}, #{receiverAnonymousId}, #{messageText}, #{messageStatus}, #{messageType})
+    </insert>
+    
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE FROM message WHERE id = #{id}
+    </delete>
+    
+    <select id="selectById" parameterType="java.lang.Long" resultMap="MessageResultMap">
+        SELECT * FROM message WHERE id = #{id}
+    </select>
+    
+    <select id="getConversation" resultMap="MessageResultMap">
+        SELECT m.id, m.sender_anonymous_id, m.receiver_anonymous_id, 
+               m.message_text, m.message_status, m.create_time,
+               CASE WHEN m.sender_anonymous_id LIKE 'admin_%' THEN 1 ELSE 0 END AS is_admin,
+               m.message_type
+        FROM message m
+        LEFT JOIN user u ON m.sender_anonymous_id = u.anonymous_id
+        WHERE ((m.sender_anonymous_id = #{anonymousId} AND m.receiver_anonymous_id = #{targetAnonymousId})
+           OR (m.sender_anonymous_id = #{targetAnonymousId} AND m.receiver_anonymous_id = #{anonymousId}))
+          AND m.message_status = 1
+        ORDER BY m.create_time ASC, m.id ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    
+    <select id="getConversations" resultMap="MessageResultMap">
+        SELECT m.id, m.sender_anonymous_id, m.receiver_anonymous_id, 
+               m.message_text, m.message_status, m.create_time,
+               CASE WHEN m.sender_anonymous_id LIKE 'admin_%' THEN 1 ELSE 0 END AS is_admin,
+               m.message_type,
+               u1.avatar AS sender_avatar,
+               u2.avatar AS receiver_avatar
+        FROM (
+            SELECT 
+                CASE 
+                    WHEN sender_anonymous_id = #{anonymousId} THEN receiver_anonymous_id 
+                    ELSE sender_anonymous_id 
+                END AS other_anonymous_id,
+                MAX(create_time) AS last_time
+            FROM message 
+            WHERE (sender_anonymous_id = #{anonymousId} OR receiver_anonymous_id = #{anonymousId})
+              AND message_status = 1
+            GROUP BY other_anonymous_id
+            ORDER BY last_time DESC
+            LIMIT #{offset}, #{pageSize}
+        ) AS conv
+        JOIN message m ON (
+            (m.sender_anonymous_id = #{anonymousId} AND m.receiver_anonymous_id = conv.other_anonymous_id)
+            OR (m.sender_anonymous_id = conv.other_anonymous_id AND m.receiver_anonymous_id = #{anonymousId})
+        )
+        AND m.create_time = conv.last_time
+        LEFT JOIN user u1 ON m.sender_anonymous_id = u1.anonymous_id
+        LEFT JOIN user u2 ON m.receiver_anonymous_id = u2.anonymous_id
+        ORDER BY m.create_time DESC
+    </select>
+</mapper>

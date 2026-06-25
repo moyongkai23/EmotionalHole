@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.AnnouncementMapper">
+    
+    <resultMap id="AnnouncementResultMap" type="com.myk.emotionalHole.entity.Announcement">
+        <id property="id" column="id"/>
+        <result property="adminId" column="admin_id"/>
+        <result property="title" column="title"/>
+        <result property="contentText" column="content_text"/>
+        <result property="announcementType" column="announcement_type"/>
+        <result property="isPinned" column="is_pinned"/>
+        <result property="announcementStatus" column="announcement_status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <insert id="insert" parameterType="com.myk.emotionalHole.entity.Announcement" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO announcement (admin_id, title, content_text, announcement_type, is_pinned, announcement_status)
+        VALUES (#{adminId}, #{title}, #{contentText}, #{announcementType}, #{isPinned}, #{announcementStatus})
+    </insert>
+    
+    <update id="update" parameterType="com.myk.emotionalHole.entity.Announcement">
+        UPDATE announcement 
+        SET title = #{title},
+            content_text = #{contentText},
+            announcement_type = #{announcementType},
+            is_pinned = #{isPinned},
+            announcement_status = #{announcementStatus},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE FROM announcement WHERE id = #{id}
+    </delete>
+    
+    <select id="selectById" parameterType="java.lang.Long" resultMap="AnnouncementResultMap">
+        SELECT * FROM announcement WHERE id = #{id}
+    </select>
+    
+    <select id="selectList" resultMap="AnnouncementResultMap">
+        SELECT * FROM announcement
+        <where>
+            <if test="announcementStatus != null and announcementStatus.intValue() != -1">
+                announcement_status = #{announcementStatus}
+            </if>
+            <if test="announcementType != null">
+                <if test="announcementStatus != null and announcementStatus.intValue() != -1">AND</if>
+                announcement_type = #{announcementType}
+            </if>
+            <if test="isPinned != null">
+                <if test="(announcementStatus != null and announcementStatus.intValue() != -1) or announcementType != null">AND</if>
+                is_pinned = #{isPinned}
+            </if>
+        </where>
+        ORDER BY is_pinned DESC, create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+</mapper>

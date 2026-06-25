@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.HugMapper">
+
+    <!-- 新增抱抱 -->
+    <insert id="insertHug" parameterType="com.myk.emotionalHole.entity.Hug">
+        insert into hug (target_type, target_id, anonymous_id, create_time)
+        values (#{targetType}, #{targetId}, #{anonymousId}, #{createTime})
+    </insert>
+
+    <!-- 删除抱抱 -->
+    <delete id="deleteHug">
+        delete from hug where target_type = #{targetType} and target_id = #{targetId} and anonymous_id = #{anonymousId}
+    </delete>
+
+    <!-- 根据目标ID和类型查询抱抱 -->
+    <select id="getHugsByTarget" resultType="com.myk.emotionalHole.entity.Hug">
+        select * from hug where target_type = #{targetType} and target_id = #{targetId}
+    </select>
+
+    <!-- 获取用户抱抱的内容列表 -->
+    <select id="getMyHugs" resultMap="com.myk.emotionalHole.mapper.ContentMapper.ContentResultMap">
+        SELECT c.*, t.topic_name as topicName, u.avatar FROM content c
+        LEFT JOIN topic t ON c.topic_id = t.id
+        LEFT JOIN user u ON c.anonymous_id = u.anonymous_id
+        JOIN hug h ON c.id = h.target_id
+        WHERE h.anonymous_id = #{anonymousId} AND h.target_type = 1
+        ORDER BY h.create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <!-- 批量查询抱抱状态 -->
+    <select id="batchGetHugStatus" resultType="com.myk.emotionalHole.entity.Hug">
+        select * from hug
+        where target_type = #{targetType}
+        and target_id in
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+        and anonymous_id = #{anonymousId}
+    </select>
+
+    <!-- 批量获取抱抱数量 -->
+    <select id="batchGetHugCount" resultType="java.util.Map">
+        select target_id as targetId, count(*) as hugCount
+        from hug
+        where target_type = #{targetType}
+        and target_id in
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+        group by target_id
+    </select>
+
+    <!-- 根据目标类型和目标ID删除所有抱抱 -->
+    <delete id="deleteByTargetTypeAndTargetId">
+        delete from hug where target_type = #{targetType} and target_id = #{targetId}
+    </delete>
+
+</mapper>

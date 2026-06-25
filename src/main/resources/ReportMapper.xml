@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.ReportMapper">
+    
+    <!-- 分页查询举报列表（带关联数据） -->
+    <select id="getReportList" parameterType="java.util.Map" resultType="java.util.HashMap">
+        select 
+            r.*,
+            c.content_text as content_title,
+            c.content_text as content_text,
+            c.anonymous_id as target_anonymous_id,
+            cm.comment_text as comment_text,
+            cm.anonymous_id as comment_anonymous_id
+        from report r
+        left join content c on r.target_type = 1 and r.target_id = c.id
+        left join comment cm on r.target_type = 2 and r.target_id = cm.id
+        <where>
+            <if test="search != null and search != ''">
+                and (r.anonymous_id like concat('%', #{search}, '%') 
+                     or r.report_type like concat('%', #{search}, '%') 
+                     or r.report_desc like concat('%', #{search}, '%')
+                     or c.content_text like concat('%', #{search}, '%')
+                     or cm.comment_text like concat('%', #{search}, '%'))
+            </if>
+            <if test="handleStatus != null">
+                and r.handle_status = #{handleStatus}
+            </if>
+            <if test="targetType != null">
+                and r.target_type = #{targetType}
+            </if>
+        </where>
+        order by r.create_time desc
+        limit #{offset}, #{limit}
+    </select>
+    
+    <!-- 查询举报总数 -->
+    <select id="getReportCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+        select count(*) from report r
+        left join content c on r.target_type = 1 and r.target_id = c.id
+        left join comment cm on r.target_type = 2 and r.target_id = cm.id
+        <where>
+            <if test="search != null and search != ''">
+                and (r.anonymous_id like concat('%', #{search}, '%') 
+                     or r.report_type like concat('%', #{search}, '%') 
+                     or r.report_desc like concat('%', #{search}, '%')
+                     or c.content_text like concat('%', #{search}, '%')
+                     or cm.comment_text like concat('%', #{search}, '%'))
+            </if>
+            <if test="handleStatus != null">
+                and handle_status = #{handleStatus}
+            </if>
+            <if test="targetType != null">
+                and target_type = #{targetType}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 根据ID查询举报详情（带关联数据） -->
+    <select id="getReportById" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select 
+            r.*,
+            c.content_text as content_title,
+            c.content_text as content_text,
+            c.anonymous_id as target_anonymous_id,
+            cm.comment_text as comment_text,
+            cm.anonymous_id as comment_anonymous_id
+        from report r
+        left join content c on r.target_type = 1 and r.target_id = c.id
+        left join comment cm on r.target_type = 2 and r.target_id = cm.id
+        where r.id = #{id}
+    </select>
+    
+    <!-- 更新举报处理状态 -->
+    <update id="updateReportStatus" parameterType="java.util.Map">
+        update report
+        <set>
+            <if test="handleStatus != null">
+                handle_status = #{handleStatus},
+            </if>
+            <if test="handleTime != null">
+                handle_time = #{handleTime},
+            </if>
+            <if test="handleRemark != null">
+                handle_remark = #{handleRemark},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    
+    <!-- 插入举报记录 -->
+    <insert id="insertReport" parameterType="com.myk.emotionalHole.entity.Report">
+        insert into report (target_type, target_id, anonymous_id, report_type, report_desc, handle_status, create_time)
+        values (#{targetType}, #{targetId}, #{anonymousId}, #{reportType}, #{reportDesc}, #{handleStatus}, #{createTime})
+    </insert>
+    
+    <!-- 获取举报总数 -->
+    <select id="getReportTotalCount" resultType="java.lang.Integer">
+        select count(*) from report
+    </select>
+    
+    <!-- 根据状态获取举报数量 -->
+    <select id="getReportCountByStatus" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        select count(*) from report where handle_status = #{status}
+    </select>
+
+    <!-- 根据目标类型和目标ID删除所有举报 -->
+    <delete id="deleteByTargetTypeAndTargetId">
+        delete from report where target_type = #{targetType} and target_id = #{targetId}
+    </delete>
+
+</mapper>

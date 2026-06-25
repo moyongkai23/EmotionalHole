@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.EmotionKeywordMapper">
+
+    <select id="getAllEnabledKeywords" resultType="com.myk.emotionalHole.entity.EmotionKeyword">
+        SELECT id, keyword, emotion_type, weight, status, create_time, update_time
+        FROM emotion_keyword
+        WHERE status = 1
+        ORDER BY emotion_type, weight DESC
+    </select>
+
+    <insert id="addKeyword" parameterType="com.myk.emotionalHole.entity.EmotionKeyword">
+        INSERT INTO emotion_keyword (keyword, emotion_type, weight, status)
+        VALUES (#{keyword}, #{emotionType}, #{weight}, #{status})
+    </insert>
+
+    <update id="updateKeyword" parameterType="com.myk.emotionalHole.entity.EmotionKeyword">
+        UPDATE emotion_keyword
+        SET
+        <if test="keyword != null">keyword = #{keyword},</if>
+        <if test="emotionType != null">emotion_type = #{emotionType},</if>
+        <if test="weight != null">weight = #{weight},</if>
+        <if test="status != null">status = #{status}</if>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteKeyword" parameterType="java.lang.Long">
+        UPDATE emotion_keyword SET status = 0 WHERE id = #{id}
+    </delete>
+
+    <select id="getKeywordById" resultType="com.myk.emotionalHole.entity.EmotionKeyword">
+        SELECT id, keyword, emotion_type, weight, status, create_time, update_time
+        FROM emotion_keyword
+        WHERE id = #{id}
+    </select>
+
+    <select id="getKeywordByName" resultType="com.myk.emotionalHole.entity.EmotionKeyword">
+        SELECT id, keyword, emotion_type, weight, status, create_time, update_time
+        FROM emotion_keyword
+        WHERE keyword = #{keyword}
+    </select>
+
+    <select id="searchKeywords" resultType="com.myk.emotionalHole.entity.EmotionKeyword">
+        SELECT id, keyword, emotion_type, weight, status, create_time, update_time
+        FROM emotion_keyword
+        WHERE keyword LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY emotion_type, weight DESC
+    </select>
+
+    <select id="searchKeywordsWithPagination" resultType="com.myk.emotionalHole.entity.EmotionKeyword">
+        SELECT id, keyword, emotion_type, weight, status, create_time, update_time
+        FROM emotion_keyword
+        WHERE keyword LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY emotion_type, weight DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countSearchKeywords" resultType="int">
+        SELECT COUNT(*) FROM emotion_keyword
+        WHERE keyword LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+
+    <select id="getKeywordsByTypeWithPagination" resultType="com.myk.emotionalHole.entity.EmotionKeyword">
+        SELECT id, keyword, emotion_type, weight, status, create_time, update_time
+        FROM emotion_keyword
+        WHERE emotion_type = #{emotionType}
+        ORDER BY emotion_type, weight DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countKeywordsByType" resultType="int">
+        SELECT COUNT(*) FROM emotion_keyword
+        WHERE emotion_type = #{emotionType}
+    </select>
+
+    <select id="getKeywordsWithPagination" resultType="com.myk.emotionalHole.entity.EmotionKeyword">
+        SELECT id, keyword, emotion_type, weight, status, create_time, update_time
+        FROM emotion_keyword
+        ORDER BY emotion_type, weight DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countAllKeywords" resultType="int">
+        SELECT COUNT(*) FROM emotion_keyword
+    </select>
+
+</mapper>

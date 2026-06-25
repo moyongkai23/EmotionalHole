@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.CommentMapper">
+    
+    <!-- 定义ResultMap，明确映射数据库字段和实体类字段 -->
+    <resultMap id="CommentResultMap" type="com.myk.emotionalHole.entity.Comment">
+        <id column="id" property="id" />
+        <result column="content_id" property="contentId" />
+        <result column="parent_id" property="parentId" />
+        <result column="comment_text" property="commentText" />
+        <result column="anonymous_id" property="anonymousId" />
+        <result column="avatar" property="avatar" />
+        <result column="like_count" property="likeCount" />
+        <result column="comment_status" property="commentStatus" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+    
+    <!-- 新增评论 -->
+    <insert id="insertComment" parameterType="com.myk.emotionalHole.entity.Comment">
+        insert into comment (content_id, parent_id, comment_text, anonymous_id, like_count, comment_status, create_time)
+        values (#{contentId, jdbcType=BIGINT}, #{parentId, jdbcType=BIGINT}, #{commentText}, #{anonymousId}, #{likeCount}, #{commentStatus}, #{createTime})
+    </insert>
+    
+    <!-- 删除评论 -->
+    <delete id="deleteComment" parameterType="java.lang.Long">
+        delete from comment where id = #{id}
+    </delete>
+    
+    <!-- 根据内容ID查询评论 -->
+    <select id="getCommentsByContentId" parameterType="java.lang.Long" resultMap="CommentResultMap">
+        select c.id, c.content_id, c.parent_id, c.comment_text, c.anonymous_id, u.avatar, c.like_count, c.comment_status, c.create_time 
+        from comment c left join user u on c.anonymous_id = u.anonymous_id
+        where c.content_id = #{contentId} order by c.create_time desc
+    </select>
+    
+    <!-- 根据ID查询评论 -->
+    <select id="getCommentById" parameterType="java.lang.Long" resultMap="CommentResultMap">
+        select c.id, c.content_id, c.parent_id, c.comment_text, c.anonymous_id, u.avatar, c.like_count, c.comment_status, c.create_time 
+        from comment c left join user u on c.anonymous_id = u.anonymous_id
+        where c.id = #{id}
+    </select>
+    
+    <!-- 根据匿名ID查询评论列表 -->
+    <select id="getCommentsByAnonymousId" parameterType="java.lang.String" resultMap="CommentResultMap">
+        select c.id, c.content_id, c.parent_id, c.comment_text, c.anonymous_id, u.avatar, c.like_count, c.comment_status, c.create_time 
+        from comment c left join user u on c.anonymous_id = u.anonymous_id
+        where c.anonymous_id = #{anonymousId} order by c.create_time desc
+    </select>
+    
+    <!-- 根据匿名ID查询评论列表（支持分页） -->
+    <select id="getCommentsByAnonymousIdWithPage" resultMap="CommentResultMap">
+        select c.id, c.content_id, c.parent_id, c.comment_text, c.anonymous_id, u.avatar, c.like_count, c.comment_status, c.create_time 
+        from comment c left join user u on c.anonymous_id = u.anonymous_id
+        where c.anonymous_id = #{anonymousId} 
+        order by c.create_time desc 
+        limit #{pageSize} offset #{offset}
+    </select>
+    
+    <!-- 根据父评论ID查询子评论 -->
+    <select id="getCommentsByParentId" parameterType="java.lang.Long" resultMap="CommentResultMap">
+        select c.id, c.content_id, c.parent_id, c.comment_text, c.anonymous_id, u.avatar, c.like_count, c.comment_status, c.create_time 
+        from comment c left join user u on c.anonymous_id = u.anonymous_id
+        where c.parent_id = #{parentId} order by c.create_time asc
+    </select>
+    
+    <!-- 更新评论状态 -->
+    <update id="updateCommentStatus" parameterType="java.util.Map">
+        update comment set comment_status = #{status} where id = #{id}
+    </update>
+    
+    <!-- 更新评论点赞数（增量操作） -->
+    <update id="updateCommentLikeNum" parameterType="java.util.Map">
+        update comment set like_count = GREATEST(0, like_count + #{likeNum}) where id = #{id}
+    </update>
+    
+    <!-- 获取所有评论（支持分页和筛选） -->
+    <select id="getAllCommentsWithPage" resultMap="CommentResultMap">
+        select c.id, c.content_id, c.parent_id, c.comment_text, c.anonymous_id, u.avatar, c.like_count, c.comment_status, c.create_time 
+        from comment c left join user u on c.anonymous_id = u.anonymous_id
+        where 1=1
+        <if test="status != null and status != ''">
+            and comment_status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            and create_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            and create_time &lt;= #{endTime}
+        </if>
+        order by create_time desc 
+        limit #{pageSize} offset #{offset}
+    </select>
+    
+    <!-- 获取评论总数 -->
+    <select id="getCommentCount" resultType="java.lang.Integer">
+        select count(*) from comment 
+        where 1=1
+        <if test="status != null and status != ''">
+            and comment_status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            and create_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            and create_time &lt;= #{endTime}
+        </if>
+    </select>
+    
+    <!-- 获取评论统计数据 -->
+    <select id="getCommentStatistics" resultType="java.util.Map">
+        select 
+            comment_status as status,
+            count(*) as count,
+            sum(like_count) as totalLikes
+        from comment 
+        group by comment_status
+        order by comment_status
+    </select>
+    
+    <!-- 批量获取评论数量（只统计主评论，不统计子评论） -->
+    <select id="batchGetCommentCount" resultType="java.util.Map">
+        select content_id as contentId, count(*) as commentCount 
+        from comment 
+        where content_id in
+        <foreach collection="contentIds" item="contentId" open="(" separator="," close=")">
+            #{contentId}
+        </foreach>
+          and (parent_id is null or parent_id = 0 or parent_id = '')
+        group by content_id
+    </select>
+    
+    <!-- 根据匿名ID批量更新评论状态 -->
+    <update id="updateCommentStatusByAnonymousId" parameterType="java.util.Map">
+        update comment set comment_status = #{status} where anonymous_id = #{anonymousId}
+    </update>
+
+    <!-- 根据内容ID删除所有评论 -->
+    <delete id="deleteByContentId">
+        delete from comment where content_id = #{contentId}
+    </delete>
+
+
+</mapper>

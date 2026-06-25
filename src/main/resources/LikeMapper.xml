@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myk.emotionalHole.mapper.LikeMapper">
+    
+    <!-- 新增点赞 -->
+    <insert id="insertLike" parameterType="com.myk.emotionalHole.entity.Like">
+        insert into `like` (target_type, target_id, anonymous_id, create_time)
+        values (#{targetType}, #{targetId}, #{anonymousId}, #{createTime})
+    </insert>
+    
+    <!-- 删除点赞 -->
+    <delete id="deleteLike">
+        delete from `like` where target_type = #{targetType} and target_id = #{targetId} and anonymous_id = #{anonymousId}
+    </delete>
+    
+    <!-- 根据目标ID和类型查询点赞 -->
+    <select id="getLikesByTarget" resultType="com.myk.emotionalHole.entity.Like">
+        select * from `like` where target_type = #{targetType} and target_id = #{targetId}
+    </select>
+    
+    <!-- 获取用户点赞的内容列表 -->
+    <select id="getMyLikes" resultMap="com.myk.emotionalHole.mapper.ContentMapper.ContentResultMap">
+        SELECT c.*, t.topic_name as topicName, u.avatar FROM content c
+        LEFT JOIN topic t ON c.topic_id = t.id
+        LEFT JOIN user u ON c.anonymous_id = u.anonymous_id
+        JOIN `like` l ON c.id = l.target_id
+        WHERE l.anonymous_id = #{anonymousId} AND l.target_type = 1
+        ORDER BY l.create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+    
+    <!-- 批量查询点赞状态 -->
+    <select id="batchGetLikeStatus" resultType="com.myk.emotionalHole.entity.Like">
+        SELECT * FROM `like` 
+        WHERE target_type = #{targetType} 
+          AND target_id IN
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+          AND anonymous_id = #{anonymousId}
+    </select>
+    
+    <!-- 批量获取点赞数量 -->
+    <select id="batchGetLikeCount" resultType="java.util.Map">
+        SELECT target_id as targetId, COUNT(*) as count
+        FROM `like`
+        WHERE target_type = #{targetType}
+          AND target_id IN
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+        GROUP BY target_id
+    </select>
+
+    <!-- 根据目标类型和目标ID删除所有点赞 -->
+    <delete id="deleteByTargetTypeAndTargetId">
+        delete from `like` where target_type = #{targetType} and target_id = #{targetId}
+    </delete>
+
+</mapper>
